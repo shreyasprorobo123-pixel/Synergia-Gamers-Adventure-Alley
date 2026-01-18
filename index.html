@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            width: 400px;
+        }
+
+        li {
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .content {
+            display: none;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .content.show {
+            display: block;
+        }
+
+        .arrow.rotate {
+            transform: rotate(180deg);
+        }
+    </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYNERGIA GAMERS</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Trebuchet MS', sans-serif;
+      color: #fff;
+      text-align: center;
+      background: url('https://images.unsplash.com/photo-1605902711622-cfb43c4437b0') no-repeat center center fixed;
+      background-size: cover;
+      animation: backgroundMove 30s linear infinite;
+    }
+
+    @keyframes backgroundMove {
+      0% { background-position: center top; }
+      50% { background-position: center bottom; }
+      100% { background-position: center top; }
+    }
+
+    header {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+    }
+
+    header h1 {
+      font-size: 3em;
+      color: #ffcc00;
+      text-shadow: 0 0 10px #ffcc00, 0 0 20px #ff6600;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #ffcc00, 0 0 20px #ff6600; }
+      to { text-shadow: 0 0 20px #ffcc00, 0 0 40px #ff3300; }
+    }
+
+    .intro {
+      font-size: 1.2em;
+      margin-top: 15px;
+      color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc;
+      animation: fadeIn 3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    main {
+      padding: 40px;
+      background-color: rgba(0, 0, 0, 0.6);
+      margin: 30px auto;
+      width: 90%;
+      max-width: 900px;
+      border-radius: 15px;
+      animation: pulse 5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px #00ffcc; }
+      50% { box-shadow: 0 0 30px #00ffcc; }
+      100% { box-shadow: 0 0 10px #00ffcc; }
+    }
+
+    h2 {
+      color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc;
+    }
+
+    p {
+      font-size: 1.2em;
+    }
+
+    .map-button, .register-button {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #ff00ff;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 0 10px #ff00ff;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .map-button:hover, .register-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px #ff00ff;
+    }
+
+    #countdown {
+      font-size: 1.5em;
+      margin-top: 20px;
+      color: #ffcc00;
+      text-shadow: 0 0 10px #ffcc00;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    footer {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      font-size: 0.9em;
+      animation: footerGlow 3s infinite alternate;
+    }
+
+    @keyframes footerGlow {
+      from { text-shadow: 0 0 10px #ff00ff; }
+      to { text-shadow: 0 0 20px #ff00ff; }
+    }
+  </style>
+</head>
+<body>
+<script>
+    function toggleDropdown(header) {
+        const content = header.nextElementSibling;
+        const arrow = header.querySelector('.arrow');
+
+        content.classList.toggle('show');
+        arrow.classList.toggle('rotate');
+    }
+</script>
+  <header>
+    <h1>🎮 ADVENTURE ALLEY 🎮</h1>
+    <p class="intro">
+      We at ADVENTURE ALLEY are an organisation of a bunch of 7th grade Students 
+      who are trying to raise money for the Vibhuthipura Matha. Safely positioned 
+      at National Public School Vibhuthipura, we are looking forward to see all of you come to our game stalls and have fun with our new and mind-boggling games.
+    </p>
+  </header>
+
+  <main>
+    <h2>📍 Location</h2>
+    <p>National Public School, Vibhuthipura, Sy.No 198, Vibhuthipura Math Vibhuthipura, behind SJP Kalyana Mantapa, HAL, Bengaluru, Karnataka 560037</p>
+    <a class="map-button" href="https://www.google.com/maps/search/?api=1&query=National+Public+School+Vibhuthipura+HAL+Bengaluru+Karnataka+560037" target="_blank">📍 Get Directions</a>
+
+    <h2>🕒 Opening Timings</h2>
+    <p>14th February 2026 — 9:00 AM to 12:00 PM</p>
+
+    <!-- New Games & Pricing Section -->
+    <h2>🎲 Games & Pricing</h2>
+    <p>Here are the exciting games we’ve prepared for you:</p>
+<div align='center'>
+    <ul style="list-style:none; padding:0; font-size:1.2em; color:#ffccff; text-shadow:0 0 10px #ff00ff;">
+      <li><div class="list-header" onclick="toggleDropdown(this)">
+            1️⃣ <strong> All Or Nothing Toss </strong><span class="arrow">▼</span>
+        </div>
+        <div class="content">
+            <p>
+                A ball-tossing game where players accrue points over increasing distances but must risk all current               points in a subsequent round to earn more.
+            </p>
+        </div>
+</li>
+      <li><div class="list-header" onclick="toggleDropdown(this)">
+             2️⃣ <strong>Cup Shooting Game</strong><span class="arrow">▼</span>
+        </div>
+        <div class="content">
+            <p>
+                Shoot stacked cups to earn points.
+                The more cups you shoot the more points you gain.
+            </p>
+        </div>
+</li>
+      <li><div class="list-header" onclick="toggleDropdown(this)">
+             3️⃣ <strong>Dice Luck Game</strong><span class="arrow">▼</span>
+        </div>
+        <div class="content">
+            <p>
+                Roll the dice to get a number. Your number decides your reward.
+            </p>
+        </div>
+</li>
+      <li><div class="list-header" onclick="toggleDropdown(this)">
+             4️⃣ <strong> Order Of The Memory</strong><span class="arrow">▼</span>
+        </div>
+        <div class="content">
+            <p>
+                A brainstorming game which includes an array of objects. Memorise the order and rearrange the
+                objects.
+            </p>
+        </div>
+</li>
+    </ul>
+</div>
+    <p style="margin-top:15px; color:#00ffcc; text-shadow:0 0 10px #00ffcc;">
+      🎮 Each game costs <strong>₹40</strong><br>
+      🎁 Goodies available for <strong>points</strong><br>
+      👨‍👩‍👧‍👦 Family Pack — <strong>₹350</strong><br>
+      👤 Single Person Pack — <strong>₹200</strong>
+    </p>
+
+    <div id="countdown">Countdown loading...</div>
+
+    <!-- Register Button linking to Google Form -->
+    <a class="register-button" href="https://forms.gle/VkkvzLUSeK4djxAE6" target="_blank">📝 Register Now</a>
+<p> Why register?<br> Register to gain offers specially for you.</p>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 SYNERGIA GAMERS | All Rights Reserved</p>
+  </footer>
+
+  <script>
+    // Countdown Timer
+    var countDownDate = new Date("Feb 14, 2026 09:00:00").getTime();
+    var x = setInterval(function() {
+      var now = new Date().getTime();
+      var distance = countDownDate - now;
+      var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      document.getElementById("countdown").innerHTML =
+        "⏳ Event starts in: " + days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+      if (distance < 0) {
+        clearInterval(x);
+        document.getElementById("countdown").innerHTML = "🎉 The event has started! Visit us now!";
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
