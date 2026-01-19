@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synergia Reaction Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f6ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      max-width: 350px;
+      width: 90%;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #gameBox {
+      margin-top: 20px;
+      padding: 30px;
+      background: red;
+      color: white;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #formButton {
+      margin-top: 25px;
+      padding: 15px 25px;
+      font-size: 18px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: none;
+    }
+
+    #formButton:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Reaction Time Challenge</h1>
+  <p>When the box turns GREEN, tap as fast as you can!</p>
+
+  <div id="gameBox">Tap to Start</div>
+
+  <div id="result"></div>
+
+  <!-- CHANGE YOUR FORM LINK BELOW -->
+  <button id="formButton" onclick="openForm()">
+    🎯 You Qualified! Proceed to Registration
+  </button>
+</div>
+
+<script>
+  let startTime;
+  let waiting = false;
+  let gameStarted = false;
+
+  const box = document.getElementById("gameBox");
+  const result = document.getElementById("result");
+  const formButton = document.getElementById("formButton");
+
+  box.addEventListener("click", () => {
+
+    if (!gameStarted) {
+      gameStarted = true;
+      result.textContent = "Wait for GREEN...";
+      box.style.background = "red";
+      box.textContent = "Wait...";
+
+      const delay = Math.random() * 3000 + 2000; // 2–5 seconds
+
+      setTimeout(() => {
+        waiting = true;
+        startTime = Date.now();
+        box.style.background = "green";
+        box.textContent = "TAP NOW!";
+      }, delay);
+
+    } else if (waiting) {
+      const reactionTime = Date.now() - startTime;
+      waiting = false;
+      gameStarted = false;
+
+      result.textContent = `Your time: ${reactionTime} ms`;
+
+      if (reactionTime < 500) {
+        result.textContent += " 🎉 YOU WIN!";
+        formButton.style.display = "block";
+      } else {
+        result.textContent += " ❌ Too slow! Try again.";
+        formButton.style.display = "none";
+      }
+
+      box.style.background = "#007bff";
+      box.textContent = "Play Again";
+    }
+  });
+
+  function openForm() {
+    // PASTE YOUR GOOGLE FORM LINK HERE
+    window.open("https://forms.gle/YOUR_FORM_LINK_HERE", "_blank");
+  }
+</script>
+
+</body>
+</html>
