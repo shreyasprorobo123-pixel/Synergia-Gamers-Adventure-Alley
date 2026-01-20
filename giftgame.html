@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catch the Gift - Synergia</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#87ceeb, #ffffff);
+    overflow: hidden;
+  }
+
+  #gameArea {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
+
+  #basket {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 55px;
+    background: #8b4513;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    font-size: 32px;
+    line-height: 55px;
+  }
+
+  .gift {
+    position: absolute;
+    top: -40px;
+    font-size: 32px;
+  }
+
+  #scoreBoard {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    font-size: 20px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+  }
+
+  #message {
+    position: absolute;
+    top: 40%;
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  #startBtn, #formBtn {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    font-size: 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  #startBtn {
+    background: #007bff;
+    color: white;
+  }
+
+  #formBtn {
+    background: #28a745;
+    color: white;
+    display: none;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="gameArea">
+
+  <div id="scoreBoard">
+    Score: <span id="score">0</span> / 12 <br>
+    Time: <span id="time">25</span>s
+  </div>
+
+  <div id="basket">🧺</div>
+
+  <div id="message">Catch 12 Gifts to Win 🎁</div>
+
+  <button id="startBtn" onclick="startGame()">Start Game</button>
+
+  <button id="formBtn" onclick="openForm()">
+    🎉 You Win! Proceed to Registration
+  </button>
+
+</div>
+
+<!-- Sound Effects -->
+<audio id="catchSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3"></audio>
+<audio id="bombSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-bomb-2165.mp3"></audio>
+
+<script>
+  const basket = document.getElementById("basket");
+  const gameArea = document.getElementById("gameArea");
+  const scoreText = document.getElementById("score");
+  const timeText = document.getElementById("time");
+  const message = document.getElementById("message");
+  const formBtn = document.getElementById("formBtn");
+  const catchSound = document.getElementById("catchSound");
+  const bombSound = document.getElementById("bombSound");
+
+  let basketX = window.innerWidth / 2;
+  let score = 0;
+  let timeLeft = 25;
+  let gameRunning = false;
+  let timerInterval;
+  let giftInterval;
+  let fallSpeed = 4;
+
+  // Move basket with touch or mouse
+  gameArea.addEventListener("mousemove", moveBasket);
+  gameArea.addEventListener("touchmove", moveBasket);
+
+  function moveBasket(e) {
+    if (!gameRunning) return;
+
+    let x;
+    if (e.touches) {
+      x = e.touches[0].clientX;
+    } else {
+      x = e.clientX;
+    }
+
+    basketX = x - 45;
+    basket.style.left = basketX + "px";
+  }
+
+  function startGame() {
+    score = 0;
+    timeLeft = 25;
+    fallSpeed = 4;
+    gameRunning = true;
+
+    scoreText.textContent = score;
+    timeText.textContent = timeLeft;
+
+    message.textContent = "Catch the gifts!";
+    document.getElementById("startBtn").style.display = "none";
+    formBtn.style.display = "none";
+
+    timerInterval = setInterval(updateTime, 1000);
+    giftInterval = setInterval(createItem, 700);
+  }
+
+  function updateTime() {
+    timeLeft--;
+    timeText.textContent = timeLeft;
+    fallSpeed += 0.2;
+
+    if (timeLeft <= 0) {
+      endGame(false);
+    }
+  }
+
+  function createItem() {
+    if (!gameRunning) return;
+
+    const item = document.createElement("div");
+    item.classList.add("gift");
+
+    const chance = Math.random();
+
+    let type = "normal";
+
+    if (chance < 0.05) {
+      type = "gold";        // 5% chance
+      item.textContent = "🌟";
+    } else if (chance < 0.20) {
+      type = "bomb";        // 15% chance
+      item.textContent = "💣";
+    } else {
+      type = "normal";
+      item.textContent = "🎁";
+    }
+
+    item.dataset.type = type;
+
+    const size = Math.random() * 10 + 26;
+    item.style.fontSize = size + "px";
+    item.style.left = Math.random() * (window.innerWidth - 40) + "px";
+    gameArea.appendChild(item);
+
+    let fall = 0;
+    const speed = fallSpeed + Math.random() * 2;
+
+    const fallInterval = setInterval(() => {
+      fall += speed;
+      item.style.top = fall + "px";
+
+      const itemRect = item.getBoundingClientRect();
+      const basketRect = basket.getBoundingClientRect();
+
+      if (
+        itemRect.bottom >= basketRect.top &&
+        itemRect.left < basketRect.right &&
+        itemRect.right > basketRect.left
+      ) {
+        handleCatch(item.dataset.type);
+        item.remove();
+        clearInterval(fallInterval);
+
+        if (score >= 12) {
+          endGame(true);
+        }
+      }
+
+      if (fall > window.innerHeight) {
+        item.remove();
+        clearInterval(fallInterval);
+      }
+
+    }, 30);
+  }
+
+  function handleCatch(type) {
+    if (type === "normal") {
+      score += 1;
+      catchSound.play();
+    }
+
+    if (type === "gold") {
+      score += 2;
+      catchSound.play();
+    }
+
+    if (type === "bomb") {
+      score -= 1;
+      if (score < 0) score = 0;
+      bombSound.play();
+    }
+
+    scoreText.textContent = score;
+  }
+
+  function endGame(win) {
+    gameRunning = false;
+    clearInterval(timerInterval);
+    clearInterval(giftInterval);
+
+    if (win) {
+      message.textContent = "🎉 YOU WIN! Fantastic!";
+      formBtn.style.display = "block";
+    } else {
+      message.textContent = "⏱️ Time Up! Try Again.";
+      document.getElementById("startBtn").style.display = "block";
+    }
+  }
+
+  function openForm() {
+    // PASTE YOUR GOOGLE FORM LINK BELOW
+    window.open("https://forms.gle/YOUR_FORM_LINK_HERE", "_blank");
+  }
+</script>
+
+</body>
+</html>
