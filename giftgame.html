@@ -9,19 +9,54 @@
   body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(#87ceeb, #ffffff);
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     overflow: hidden;
+    color: white;
   }
 
-  #gameArea {
-    position: relative;
+  #startScreen, #gameArea {
     width: 100%;
     height: 100vh;
+    position: absolute;
   }
+
+  /* ---------- RULES SCREEN ---------- */
+  #startScreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #rulesBox {
+    background: linear-gradient(145deg, #1f3c88, #3a7bd5);
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+  }
+
+  #rulesBox h2 { margin-top: 0; }
+
+  #startBtn {
+    margin-top: 20px;
+    padding: 15px 35px;
+    font-size: 22px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: gold;
+    color: black;
+    font-weight: bold;
+  }
+
+  /* ---------- GAME AREA ---------- */
+  #gameArea { display: none; }
 
   #basket {
     position: absolute;
-    bottom: 20px;
+    bottom: 25px;
     left: 50%;
     transform: translateX(-50%);
     width: 90px;
@@ -37,7 +72,7 @@
   .gift {
     position: absolute;
     top: -40px;
-    font-size: 32px;
+    font-size: 34px;   /* FIXED SIZE (same on phone & laptop) */
   }
 
   #scoreBoard {
@@ -46,6 +81,7 @@
     left: 15px;
     font-size: 20px;
     background: white;
+    color: black;
     padding: 10px 15px;
     border-radius: 10px;
   }
@@ -55,11 +91,11 @@
     top: 40%;
     width: 100%;
     text-align: center;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: bold;
   }
 
-  #startBtn, #formBtn {
+  #formBtn, #playAgainBtn {
     position: absolute;
     top: 60%;
     left: 50%;
@@ -69,107 +105,136 @@
     border: none;
     border-radius: 10px;
     cursor: pointer;
-  }
-
-  #startBtn {
-    background: #007bff;
-    color: white;
-  }
-
-  #formBtn {
-    background: #28a745;
-    color: white;
     display: none;
   }
+
+  #formBtn { background: #28a745; color: white; }
+  #playAgainBtn { background: #ff9800; color: white; }
+
+  canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
 </style>
 </head>
 
 <body>
 
+<!-- RULES SCREEN -->
+<div id="startScreen">
+  <div id="rulesBox">
+    <h2>🎁 Catch the Gift Challenge</h2>
+    <p>
+      • Catch <b>14 points</b> in <b>25 seconds</b><br><br>
+      🎁 Gift = +1 point<br>
+      🌟 Golden Gift = +2 points (rare)<br>
+      💣 Bomb = −1 point (avoid!)<br><br>
+      Controls:<br>
+      ⬅️➡️ Arrow Keys (Laptop)<br>
+      👉 Swipe / Drag (Mobile & Mouse)<br><br>
+      Win to unlock registration!
+    </p>
+
+    <button id="startBtn" onclick="startGame()">▶️ Start Game</button>
+  </div>
+</div>
+
+<!-- GAME AREA -->
 <div id="gameArea">
 
   <div id="scoreBoard">
-    Score: <span id="score">0</span> / 15 <br>
-    Time: <span id="time">20</span>s
+    Score: <span id="score">0</span> / 14 <br>
+    Time: <span id="time">25</span>s
   </div>
 
   <div id="basket">🧺</div>
 
-  <div id="message">Catch 15 Gifts to Win 🎁</div>
+  <div id="message"></div>
 
-  <button id="startBtn" onclick="startGame()">Start Game</button>
+  <button id="formBtn" onclick="openForm()">🎉 Proceed to Registration</button>
+  <button id="playAgainBtn" onclick="resetGame()">🔄 Play Again</button>
 
-  <button id="formBtn" onclick="openForm()">
-    🎉 You Win! Proceed to Registration
-  </button>
+  <canvas id="confetti"></canvas>
 
 </div>
 
-<!-- Sound Effects -->
+<!-- Sounds -->
 <audio id="catchSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3"></audio>
 <audio id="bombSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-bomb-2165.mp3"></audio>
 
 <script>
   const basket = document.getElementById("basket");
   const gameArea = document.getElementById("gameArea");
+  const startScreen = document.getElementById("startScreen");
   const scoreText = document.getElementById("score");
   const timeText = document.getElementById("time");
   const message = document.getElementById("message");
   const formBtn = document.getElementById("formBtn");
-  const catchSound = document.getElementById("catchSound");
-  const bombSound = document.getElementById("bombSound");
+  const playAgainBtn = document.getElementById("playAgainBtn");
 
-  let basketX = window.innerWidth / 2;
-  let score = 0;
-  let timeLeft = 20;
-  let gameRunning = false;
-  let timerInterval;
-  let giftInterval;
-  let fallSpeed = 4;
+  let basketX, score, timeLeft, gameRunning;
+  let timerInterval, giftInterval;
+  let fallSpeed;
 
-  // Move basket with touch or mouse
-  gameArea.addEventListener("mousemove", moveBasket);
-  gameArea.addEventListener("touchmove", moveBasket);
+  /* ---------- CONTROLS ---------- */
 
-  function moveBasket(e) {
+  // Arrow keys (FASTER X movement)
+  document.addEventListener("keydown", (e) => {
     if (!gameRunning) return;
+    if (e.key === "ArrowLeft") basketX -= 60;
+    if (e.key === "ArrowRight") basketX += 60;
+    keepInside();
+  });
 
-    let x;
-    if (e.touches) {
-      x = e.touches[0].clientX;
-    } else {
-      x = e.clientX;
-    }
+  // Mouse move
+  gameArea.addEventListener("mousemove", (e) => {
+    if (!gameRunning) return;
+    basketX = e.clientX - 45;
+    keepInside();
+  });
 
-    basketX = x - 45;
+  // Swipe (mobile)
+  gameArea.addEventListener("touchmove", (e) => {
+    if (!gameRunning) return;
+    e.preventDefault();
+    basketX = e.touches[0].clientX - 45;
+    keepInside();
+  }, { passive: false });
+
+  function keepInside() {
+    const max = window.innerWidth - 90;
+    if (basketX < 0) basketX = 0;
+    if (basketX > max) basketX = max;
     basket.style.left = basketX + "px";
   }
 
+  /* ---------- GAME LOGIC ---------- */
+
   function startGame() {
+    startScreen.style.display = "none";
+    gameArea.style.display = "block";
+
     score = 0;
-    timeLeft = 20;
-    fallSpeed = 4;
+    timeLeft = 25;
+    fallSpeed = 4.5;
+    basketX = window.innerWidth / 2 - 45;
     gameRunning = true;
 
     scoreText.textContent = score;
     timeText.textContent = timeLeft;
-
-    message.textContent = "Catch the gifts!";
-    document.getElementById("startBtn").style.display = "none";
+    message.textContent = "";
     formBtn.style.display = "none";
+    playAgainBtn.style.display = "none";
+
+    basket.style.left = basketX + "px";
 
     timerInterval = setInterval(updateTime, 1000);
-    giftInterval = setInterval(createItem, 700);
+    giftInterval = setInterval(createItem, 650);
   }
 
   function updateTime() {
     timeLeft--;
     timeText.textContent = timeLeft;
-    fallSpeed += 0.2;
+    fallSpeed += 0.25;   // harder over time
 
-    if (timeLeft <= 0) {
-      endGame(false);
-    }
+    if (timeLeft <= 0) endGame(false);
   }
 
   function createItem() {
@@ -179,24 +244,13 @@
     item.classList.add("gift");
 
     const chance = Math.random();
+    let type;
 
-    let type = "normal";
-
-    if (chance < 0.05) {
-      type = "gold";        // 5% chance
-      item.textContent = "🌟";
-    } else if (chance < 0.20) {
-      type = "bomb";        // 15% chance
-      item.textContent = "💣";
-    } else {
-      type = "normal";
-      item.textContent = "🎁";
-    }
+    if (chance < 0.05) { type = "gold"; item.textContent = "🌟"; }
+    else if (chance < 0.25) { type = "bomb"; item.textContent = "💣"; }
+    else { type = "normal"; item.textContent = "🎁"; }
 
     item.dataset.type = type;
-
-    const size = Math.random() * 10 + 26;
-    item.style.fontSize = size + "px";
     item.style.left = Math.random() * (window.innerWidth - 40) + "px";
     gameArea.appendChild(item);
 
@@ -207,47 +261,27 @@
       fall += speed;
       item.style.top = fall + "px";
 
-      const itemRect = item.getBoundingClientRect();
-      const basketRect = basket.getBoundingClientRect();
+      const r1 = item.getBoundingClientRect();
+      const r2 = basket.getBoundingClientRect();
 
-      if (
-        itemRect.bottom >= basketRect.top &&
-        itemRect.left < basketRect.right &&
-        itemRect.right > basketRect.left
-      ) {
-        handleCatch(item.dataset.type);
+      if (r1.bottom >= r2.top && r1.left < r2.right && r1.right > r2.left) {
+        handleCatch(type);
         item.remove();
         clearInterval(fallInterval);
-
-        if (score >= 15) {
-          endGame(true);
-        }
+        if (score >= 14) endGame(true);
       }
 
       if (fall > window.innerHeight) {
         item.remove();
         clearInterval(fallInterval);
       }
-
     }, 30);
   }
 
   function handleCatch(type) {
-    if (type === "normal") {
-      score += 1;
-      catchSound.play();
-    }
-
-    if (type === "gold") {
-      score += 2;
-      catchSound.play();
-    }
-
-    if (type === "bomb") {
-      score -= 1;
-      if (score < 0) score = 0;
-      bombSound.play();
-    }
+    if (type === "normal") score++;
+    if (type === "gold") score += 2;
+    if (type === "bomb") { score--; if (score < 0) score = 0; }
 
     scoreText.textContent = score;
   }
@@ -257,22 +291,60 @@
     clearInterval(timerInterval);
     clearInterval(giftInterval);
 
+    playAgainBtn.style.display = "block";
+
     if (win) {
-      message.textContent = "🎉 YOU WIN! Fantastic!";
+      message.textContent = "🎉 YOU WIN!";
       formBtn.style.display = "block";
+      startConfetti();
     } else {
       message.textContent = "⏱️ Time Up! Try Again.";
-      document.getElementById("startBtn").style.display = "block";
     }
   }
 
+  function resetGame() {
+    gameArea.style.display = "none";
+    startScreen.style.display = "flex";
+  }
+
   function openForm() {
-    // PASTE YOUR GOOGLE FORM LINK BELOW
     window.open("https://forms.gle/YOUR_FORM_LINK_HERE", "_blank");
+  }
+
+  /* ---------- CONFETTI ---------- */
+
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+
+  function startConfetti() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let pieces = [];
+    for (let i = 0; i < 150; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 50
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      pieces.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = "gold";
+        ctx.fill();
+        p.y += 3;
+      });
+      requestAnimationFrame(draw);
+    }
+
+    draw();
   }
 </script>
 
 </body>
 </html>
-
-
