@@ -9,11 +9,17 @@
   body {
     margin: 0;
     font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  /* Animated gradient background */
+  #startScreen, #gameArea {
+    width: 100%;
+    height: 100vh;
+    position: absolute;
     background: linear-gradient(270deg, #1a2a6c, #b21f1f, #fdbb2d);
     background-size: 600% 600%;
     animation: gradientMove 12s ease infinite;
-    overflow: hidden;
-    color: white;
   }
 
   @keyframes gradientMove {
@@ -22,16 +28,11 @@
     100% { background-position: 0% 50%; }
   }
 
-  #startScreen, #gameArea {
-    width: 100%;
-    height: 100vh;
-    position: absolute;
-  }
-
   #startScreen {
     display: flex;
     justify-content: center;
     align-items: center;
+    color: white;
   }
 
   #rulesBox {
@@ -60,7 +61,7 @@
 
   #basket {
     position: absolute;
-    bottom: 25px;
+    bottom: 40px;
     width: 90px;
     height: 55px;
     background: #8b4513;
@@ -90,11 +91,12 @@
 
   #message {
     position: absolute;
-    top: 40%;
+    top: 38%;
     width: 100%;
     text-align: center;
-    font-size: 30px;
+    font-size: 32px;
     font-weight: bold;
+    color: white;
   }
 
   #formBtn, #playAgainBtn {
@@ -109,7 +111,7 @@
     display: none;
   }
 
-  #formBtn { top: 60%; background: #28a745; color: white; }
+  #formBtn { top: 58%; background: #28a745; color: white; }
   #playAgainBtn { top: 70%; background: #ff9800; color: white; }
 
   canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -123,9 +125,9 @@
   <div id="rulesBox">
     <h2>🎁 Catch the Gift Challenge</h2>
     <p>
-      Catch <b>14 points</b> in <b>25 seconds</b><br><br>
+      Catch <b>15 points</b> in <b>30 seconds</b><br><br>
       🎁 Gift = +1 point<br>
-      🌟 Golden = +2 points<br>
+      🌟 Golden = +2 points (rare)<br>
       💣 Bomb = −1 point<br><br>
       ⬅️➡️ Arrow keys | Swipe / Drag<br><br>
       Win to unlock registration!
@@ -138,8 +140,8 @@
 <div id="gameArea">
 
   <div id="scoreBoard">
-    Score: <span id="score">0</span> / 14 <br>
-    Time: <span id="time">25</span>s
+    Score: <span id="score">0</span> / 15 <br>
+    Time: <span id="time">30</span>s
   </div>
 
   <div id="basket">🧺</div>
@@ -168,8 +170,8 @@
 
   document.addEventListener("keydown", (e) => {
     if (!gameRunning) return;
-    if (e.key === "ArrowLeft") basketX -= 60;
-    if (e.key === "ArrowRight") basketX += 60;
+    if (e.key === "ArrowLeft") basketX -= 40;
+    if (e.key === "ArrowRight") basketX += 40;
     keepInside();
   });
 
@@ -198,8 +200,8 @@
     gameArea.style.display = "block";
 
     score = 0;
-    timeLeft = 25;
-    fallSpeed = 4.5;
+    timeLeft = 30;
+    fallSpeed = 2.2;   // MUCH slower start
     basketX = window.innerWidth / 2 - 45;
     gameRunning = true;
 
@@ -212,13 +214,13 @@
     basket.style.left = basketX + "px";
 
     timerInterval = setInterval(updateTime, 1000);
-    giftInterval = setInterval(createItem, 650);
+    giftInterval = setInterval(createItem, 800); // slower spawn
   }
 
   function updateTime() {
     timeLeft--;
     timeText.textContent = timeLeft;
-    fallSpeed += 0.25;
+    fallSpeed += 0.15;  // slowly increases difficulty
     if (timeLeft <= 0) endGame(false);
   }
 
@@ -231,8 +233,8 @@
     const chance = Math.random();
     let type;
 
-    if (chance < 0.05) { type = "gold"; item.textContent = "🌟"; }
-    else if (chance < 0.25) { type = "bomb"; item.textContent = "💣"; }
+    if (chance < 0.04) { type = "gold"; item.textContent = "🌟"; }
+    else if (chance < 0.22) { type = "bomb"; item.textContent = "💣"; }
     else { type = "normal"; item.textContent = "🎁"; }
 
     item.dataset.type = type;
@@ -240,7 +242,7 @@
     gameArea.appendChild(item);
 
     let fall = 0;
-    const speed = fallSpeed + Math.random() * 2;
+    const speed = fallSpeed + Math.random() * 1.5;
 
     const fallInterval = setInterval(() => {
       fall += speed;
@@ -253,7 +255,7 @@
         handleCatch(type);
         item.remove();
         clearInterval(fallInterval);
-        if (score >= 14) endGame(true);
+        if (score >= 15) endGame(true);
       }
 
       if (fall > window.innerHeight) {
@@ -304,7 +306,7 @@
     canvas.height = window.innerHeight;
 
     let pieces = [];
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 150; i++) {
       pieces.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: 5 });
     }
 
