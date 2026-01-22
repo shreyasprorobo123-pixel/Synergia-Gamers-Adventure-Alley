@@ -6,20 +6,11 @@
 <title>Catch the Gift - Synergia</title>
 
 <style>
-  /* Animated gradient on the page background */
   body {
     margin: 0;
     font-family: Arial, sans-serif;
     overflow: hidden;
     background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-    background-size: 300% 300%;
-    animation: gradient 8s ease infinite;
-  }
-
-  @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
   }
 
   #startScreen, #gameArea {
@@ -30,13 +21,12 @@
     left: 0;
   }
 
-  /* Make these containers transparent so the animated body background shows through */
   #startScreen {
     display: flex;
     justify-content: center;
     align-items: center;
     color: white;
-    background: transparent;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
   }
 
   #rulesBox {
@@ -63,7 +53,7 @@
 
   #gameArea {
     display: none;
-    background: transparent;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
   }
 
   #basket {
@@ -338,3 +328,10 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
