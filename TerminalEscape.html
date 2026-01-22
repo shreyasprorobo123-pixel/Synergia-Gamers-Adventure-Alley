@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL_ESCAPE_v8.0</title>
+    <style>
+        :root {
+            --glow: #00ffaa;
+            --alert: #ff3333;
+            --hint: #ffff00;
+            --bg: #050505;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg); color: var(--glow);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+
+        #hacker-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; transition: opacity 2s; }
+        #story-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; transition: all 1.5s ease; z-index: 0; filter: brightness(0.4); }
+
+        .terminal {
+            width: 600px; padding: 30px; border: 2px solid var(--glow);
+            background: rgba(0, 10, 5, 0.95); box-shadow: 0 0 40px rgba(0, 255, 170, 0.2);
+            position: relative; z-index: 10; text-align: center; backdrop-filter: blur(5px);
+        }
+
+        /* Briefing Grid */
+        #location-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
+        .loc-item { 
+            display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(10px); 
+            transition: 0.4s; background: rgba(0, 255, 170, 0.05); padding: 5px; border: 1px solid rgba(0,255,170,0.2);
+        }
+        .loc-item img { width: 50px; height: 50px; border: 1px solid var(--glow); object-fit: cover; }
+        .loc-item.reveal { opacity: 1; transform: translateY(0); }
+
+        /* Map Indicator */
+        #map-container { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 4px; }
+        .map-node { height: 6px; flex-grow: 1; background: #222; border: 1px solid #444; transition: 0.3s; }
+        .map-node.active { background: var(--glow); box-shadow: 0 0 10px var(--glow); border-color: #fff; }
+        .map-node.passed { background: #006644; border-color: var(--glow); }
+
+        .shake-light { animation: shake 0.5s infinite; }
+        .shake-heavy { animation: shake 0.1s infinite; border-color: var(--alert) !important; box-shadow: 0 0 50px var(--alert); }
+        
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-1px, -1px); }
+            100% { transform: translate(1px, -1px); }
+        }
+
+        #timer-display { font-size: 42px; font-weight: bold; margin-bottom: 5px; }
+        .critical { color: var(--alert); }
+        #question { margin: 15px 0; min-height: 50px; font-size: 1.1em; color: #eee; }
+
+        input {
+            background: rgba(0, 255, 170, 0.1); border: 1px solid var(--glow);
+            color: var(--glow); width: 85%; font-size: 20px; padding: 10px; outline: none; text-align: center; margin-bottom: 15px;
+        }
+
+        .btn-main { background: var(--glow); color: black; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;}
+        .btn-main:hover { background: #fff; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="story-bg"></div>
+<canvas id="hacker-canvas"></canvas>
+
+<div class="terminal" id="box">
+    <div id="screen-start">
+        <h1 style="letter-spacing: 8px;">SYSTEM_INIT</h1>
+        <button class="btn-main" onclick="initAudio(); initGame()">[ BOOT SYSTEM ]</button>
+    </div>
+
+    <div id="screen-intro-1" class="hidden">
+        <p>A dark road. No moon. Only the sound of your own breath.</p>
+        <button class="btn-main" onclick="showIntro2()">CONTINUE</button>
+    </div>
+
+    <div id="screen-intro-2" class="hidden">
+        <p>A movement in the brush leads you to a heavy steel hatch. You descend into the dark.</p>
+        <button class="btn-main" onclick="showBriefing()">SCAN FACILITY</button>
+    </div>
+
+    <div id="screen-briefing" class="hidden">
+        <h2 style="color: #fff; margin: 0;">MAP_ANALYSIS_COMPLETE</h2>
+        <div id="location-list"></div>
+        <button id="start-btn" class="btn-main hidden" onclick="startHacking()">BEGIN INFILTRATION</button>
+    </div>
+
+    <div id="game-ui" class="hidden">
+        <div id="map-container"></div>
+        <div id="timer-display">03:00</div>
+        <p id="progress" style="font-size: 10px; margin: 0;">CONNECTION_STABLE</p>
+        <hr style="border: 0.5px solid var(--glow); margin: 10px 0;">
+        <h3 id="room-name" style="color:#fff; margin: 5px 0;">...</h3>
+        <p id="question">...</p>
+        <input type="text" id="answer" placeholder="DECRYPT KEY" autocomplete="off">
+        <button class="btn-main" onclick="checkAnswer()">SUBMIT BYPASS</button>
+        <button onclick="getHint()" style="background:none; border:none; color:var(--hint); cursor:pointer; font-size:11px;">[ REQUEST CLUE -20S ]</button>
+        <p id="status" style="font-size: 12px; margin-top: 10px;"></p>
+    </div>
+</div>
+
+<script>
+    let audioCtx, currentStage = 0, timeLeft = 180, timerInterval, activeQuestions = [];
+
+    // CUSTOM LOCATIONS
+    const locationData = [
+        { name: "REINFORCED GATES", img: "https://static.vecteezy.com/system/resources/thumbnails/065/944/950/small/rusty-gates-behind-barbed-wire-creating-a-foreboding-atmosphere-in-an-abandoned-facility-at-twilight-free-photo.jpeg" },
+        { name: "DARK TUNNEL", img: "https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/6645c58432dcda001d5a181f.webp" },
+        { name: "CODE ROOM", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQP7fDjUUknDI1R64yg5hs3l6Lg2ySoceDslw&s" },
+        { name: "SUPER COMPUTER ROOM", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" },
+        { name: "RADIOACTIVE LAB", img: "https://thumbs.dreamstime.com/b/radioactive-material-glows-inside-glass-cylinders-secure-laboratory-glass-cylinders-hold-substance-marked-radiation-410413868.jpg" },
+        { name: "VAULT", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6EfhfaKFnUHYG6DRjCoZPmQUfFzMzeJG8lg&s" },
+        { name: "NEURAL INTERFACE", img: "https://images.unsplash.com/photo-1507413245164-6160d8298b31" },
+        { name: "THERMAL REACTOR", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa" },
+        { name: "SCI-FI CHAMBER", img: "https://img.pikbest.com/illustration/20241023/a-hyper-realistic-depiction-of-a-cryosleep-chamber-with-human-inside-glowing-poster_10995223.jpg!bw700" },
+        { name: "FINAL EXTRACTION", img: "https://images.unsplash.com/photo-1481026469463-66327c86e544" }
+    ];
+
+    const questionLibrary = [
+        {q: "I have a thumb and four fingers, but I am not alive.", a: "glove", h: "Think of hand protection."},
+        {q: "The more of them you take, the more you leave behind.", a: "footsteps", h: "Left by boots."},
+        {q: "What has a head and a tail but no body?", a: "coin", h: "Currency."},
+        {q: "Sequence: 2, 4, 8, 16, ?", a: "32", h: "Binary multiplication."},
+        {q: "I am tall when young, short when old. What am I?", a: "candle", h: "I provide wax light."},
+        {q: "What belongs to you, but others use it more?", a: "name", h: "Your identity."},
+        {q: "Sequence: 1, 1, 2, 3, 5, ?", a: "8", h: "Fibonacci sequence."},
+        {q: "What has keys but no locks, space but no room?", a: "keyboard", h: "An input device."},
+        {q: "What can you catch but not throw?", a: "cold", h: "An illness."},
+        {q: "I start with E, end with E, but contain one letter.", a: "envelope", h: "Paper for letters."},
+        {q: "What is full of holes but still holds water?", a: "sponge", h: "Kitchen tool."},
+        {q: "What has legs but doesn't walk?", a: "table", h: "Four-legged furniture."}
+    ];
+
+    function initAudio() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playSound(f, t, d) { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type=t; o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }
+    function playGlitchSound() { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; const now=audioCtx.currentTime; o.frequency.setValueAtTime(Math.random()*400+100, now); g.gain.setValueAtTime(0.03, now); g.gain.linearRampToValueAtTime(0, now+0.1); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(now+0.1); }
+
+    const canvas = document.getElementById('hacker-canvas'), ctx = canvas.getContext('2d');
+    let drops = [];
+    function setupMatrix() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; for (let x = 0; x < canvas.width/20; x++) drops[x] = 1; }
+    function drawMatrix() { ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#00ffaa"; ctx.font = "15px monospace"; drops.forEach((y, i) => { const text = String.fromCharCode(Math.random() * 128); ctx.fillText(text, i * 20, y * 20); if (y * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0; drops[i]++; }); }
+
+    function initGame() {
+        activeQuestions = [...questionLibrary].sort(() => 0.5 - Math.random()).slice(0, 10);
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-intro-1').classList.remove('hidden');
+        document.getElementById('story-bg').style.backgroundImage = "url('https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=2000')";
+        playSound(400, 'sine', 0.2);
+    }
+
+    function showIntro2() { 
+        document.getElementById('screen-intro-1').classList.add('hidden'); 
+        document.getElementById('screen-intro-2').classList.remove('hidden'); 
+        playSound(400, 'sine', 0.2); 
+    }
+
+    function showBriefing() {
+        document.getElementById('screen-intro-2').classList.add('hidden');
+        document.getElementById('screen-briefing').classList.remove('hidden');
+        document.getElementById('hacker-canvas').style.opacity = "1";
+        setupMatrix(); setInterval(drawMatrix, 50);
+
+        const list = document.getElementById('location-list');
+        locationData.forEach((loc, i) => {
+            const div = document.createElement('div');
+            div.className = 'loc-item';
+            div.innerHTML = `<img src="${loc.img}" alt="room"> <div><b>${loc.name}</b><br><span style="font-size:8px; color:var(--alert)">SECURITY: ACTIVE</span></div>`;
+            list.appendChild(div);
+            setTimeout(() => { div.classList.add('reveal'); playSound(300 + (i*30), 'sine', 0.05); if(i === 9) document.getElementById('start-btn').classList.remove('hidden'); }, i * 200);
+        });
+    }
+
+    function startHacking() {
+        document.getElementById('screen-briefing').classList.add('hidden');
+        document.getElementById('game-ui').classList.remove('hidden');
+        
+        const map = document.getElementById('map-container');
+        for(let i=0; i<10; i++) {
+            const node = document.createElement('div');
+            node.className = 'map-node';
+            node.id = `node-${i}`;
+            map.appendChild(node);
+        }
+        initStage(); startTimer();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const min = Math.floor(timeLeft/60), sec = timeLeft%60;
+            const display = document.getElementById('timer-display'), box = document.getElementById('box');
+            display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
+            if(timeLeft < 30) { display.classList.add('critical'); box.classList.add('shake-light'); }
+            if(timeLeft <= 10) { box.classList.replace('shake-light', 'shake-heavy'); playGlitchSound(); }
+            if(timeLeft <= 0) endGame("ACCESS_DENIED");
+        }, 1000);
+    }
+
+    function initStage() {
+        if (currentStage >= 10) return endGame("SYSTEM_BYPASSED");
+        
+        for(let i=0; i<10; i++) {
+            const node = document.getElementById(`node-${i}`);
+            node.className = 'map-node' + (i < currentStage ? ' passed' : (i === currentStage ? ' active' : ''));
+        }
+
+        const data = activeQuestions[currentStage];
+        document.getElementById("room-name").innerText = locationData[currentStage].name;
+        document.getElementById("question").innerText = data.q;
+        document.getElementById("answer").value = "";
+        document.getElementById("status").innerText = "";
+        document.getElementById("answer").focus();
+    }
+
+    function checkAnswer() {
+        const val = document.getElementById("answer").value.trim().toLowerCase();
+        if (val === activeQuestions[currentStage].a) {
+            playSound(800, 'sine', 0.1); currentStage++; initStage();
+        } else {
+            playSound(100, 'sawtooth', 0.3); timeLeft -= 10;
+            document.getElementById("status").innerText = "CORRUPT_DATA: -10s";
+            document.getElementById("status").style.color = "red";
+        }
+    }
+
+    function getHint() {
+        if(timeLeft <= 20) return;
+        timeLeft -= 20; playSound(300, 'triangle', 0.2);
+        document.getElementById("status").innerText = "HINT: " + activeQuestions[currentStage].h;
+        document.getElementById("status").style.color = "var(--hint)";
+    }
+
+    function endGame(msg) { 
+        clearInterval(timerInterval); 
+        document.getElementById('game-ui').innerHTML = `<h1 style="color:white; margin:0;">${msg}</h1><button class="btn-main" onclick="location.reload()" style="margin-top:20px;">REBOOT</button>`; 
+    }
+
+    document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
+</script>
+</body>
+</html>
