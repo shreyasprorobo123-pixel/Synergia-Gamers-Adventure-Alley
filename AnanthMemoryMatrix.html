@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EigenMemory: The Matrix</title>
+  <style>
+    /* MATH AESTHETIC SETUP */
+    body {
+      margin: 0;
+      background-color: #0d1b2a; /* Dark Navy/Blackboard */
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px; /* Graph paper effect */
+      color: #e0e1dd;
+      font-family: 'Courier New', Courier, monospace; /* Monospace for math look */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    h2 {
+      margin-top: 20px;
+      font-size: 2rem;
+      text-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
+    }
+
+    /* Status Bar Layout */
+    .status-bar {
+      display: flex;
+      gap: 30px;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      padding: 15px 30px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #415a77;
+      border-radius: 5px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #778da9;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-weight: bold;
+      color: #e0e1dd;
+    }
+
+    #score-val { color: #ffd60a; } /* Gold color for score */
+
+    /* 5x5 Grid Setup */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px); 
+      gap: 10px;
+      padding: 15px;
+      background: #1b263b;
+      border: 2px solid #778da9;
+      box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #415a77;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.1);
+    }
+
+    .cell:hover { border: 1px solid #fff; }
+    .cell:active { transform: scale(0.95); }
+
+    /* States */
+    .active {
+      background: #00b4d8 !important; /* Cyan Math Color */
+      box-shadow: 0 0 15px #00b4d8;
+      color: #000;
+    }
+
+    .wrong {
+      background: #e63946 !important; /* Error Red */
+      animation: shake 0.4s ease-in-out;
+    }
+
+    .correct {
+      background: #2a9d8f !important; /* Success Green */
+    }
+
+    /* Message Area */
+    #msg-area {
+      margin-top: 15px;
+      height: 30px;
+      font-weight: bold;
+      color: #00b4d8;
+      text-shadow: 0 0 5px rgba(0, 180, 216, 0.4);
+    }
+
+    #btn-container {
+      margin-top: 20px;
+      height: 50px;
+    }
+
+    button {
+      padding: 10px 25px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      cursor: pointer;
+      background: #e0e1dd;
+      border: none;
+      font-weight: bold;
+      display: none; 
+      border-radius: 2px;
+    }
+    
+    button:hover {
+        background: #fff;
+        box-shadow: 0 0 10px #fff;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+  </style>
+</head>
+<body>
+
+<h2>∫ Memory Matrix_</h2>
+
+<div class="status-bar">
+  <div class="stat-item">
+    <span class="stat-label">Level</span>
+    <span class="stat-value" id="level-display">1</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">Score</span>
+    <span class="stat-value" id="score-val">0</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-label">Status</span>
+    <span class="stat-value" id="status-indicator">READY</span>
+  </div>
+</div>
+
+<div id="msg-area">Initialize System...</div>
+
+<div class="grid" id="grid"></div>
+
+<div id="btn-container">
+  <button id="next-btn" onclick="nextLevel()">NEXT LEVEL >></button>
+  <button id="retry-btn" onclick="restartGame()">RESTART SYSTEM</button>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const GRID_SIZE = 25; // 5x5 Grid
+const levels = [
+  { level: 1, count: 5, time: 3000 },  
+  { level: 2, count: 6, time: 2500 },  
+  { level: 3, count: 7, time: 2000 }, 
+  { level: 4, count: 8, time: 1500 }   
+];
+
+// --- STATE VARIABLES ---
+let currentLevelIdx = 0;
+let activePattern = []; 
+let playerClicks = 0;
+let canClick = false; 
+let score = 0;
+let startTime = 0; // For tracking speed
+
+// DOM Elements
+const grid = document.getElementById("grid");
+const msgArea = document.getElementById("msg-area");
+const levelDisplay = document.getElementById("level-display");
+const scoreDisplay = document.getElementById("score-val");
+const statusIndicator = document.getElementById("status-indicator");
+const nextBtn = document.getElementById("next-btn");
+const retryBtn = document.getElementById("retry-btn");
+
+// --- INITIALIZATION ---
+function initGrid() {
+  grid.innerHTML = "";
+  for(let i = 0; i < GRID_SIZE; i++){
+    let cell = document.createElement("div");
+    cell.classList.add("cell");
+    // Math decoration
+    cell.innerText = Math.random() > 0.5 ? "x" : "y"; 
+    cell.onclick = () => handleCellClick(i, cell);
+    grid.appendChild(cell);
+  }
+}
+
+function startGame() {
+  currentLevelIdx = 0;
+  score = 0;
+  updateScoreUI();
+  startLevel();
+}
+
+function startLevel() {
+  // Reset UI
+  nextBtn.style.display = "none";
+  retryBtn.style.display = "none";
+  document.querySelectorAll(".cell").forEach(c => {
+    c.className = "cell"; 
+  });
+  
+  // Update Game State
+  const config = levels[currentLevelIdx];
+  levelDisplay.innerText = `${config.level} / ${levels.length}`;
+  statusIndicator.innerText = "MEMORIZE";
+  statusIndicator.style.color = "#e0e1dd";
+  msgArea.innerText = `Pattern Sequence: ${config.count} items`;
+  
+  playerClicks = 0;
+  activePattern = [];
+  canClick = false;
+
+  // Generate Random Pattern
+  while(activePattern.length < config.count){
+    let r = Math.floor(Math.random() * GRID_SIZE);
+    if(!activePattern.includes(r)) activePattern.push(r);
+  }
+
+  // Show Pattern
+  activePattern.forEach(idx => {
+    grid.children[idx].classList.add("active");
+  });
+
+  // Hide Pattern after time delay & Start Timer
+  setTimeout(() => {
+    document.querySelectorAll(".cell").forEach(c => c.classList.remove("active"));
+    statusIndicator.innerText = "INPUT";
+    statusIndicator.style.color = "#00b4d8";
+    msgArea.innerText = "Re-enter sequence...";
+    canClick = true;
+    startTime = Date.now(); // Start the timer for scoring
+  }, config.time);
+}
+
+// --- INTERACTION ---
+function handleCellClick(index, cell) {
+  if (!canClick) return; 
+  if (cell.classList.contains("correct")) return; 
+
+  if (activePattern.includes(index)) {
+    // Correct Click
+    cell.classList.add("correct");
+    playerClicks++;
+
+    if (playerClicks === activePattern.length) {
+      handleWin();
+    }
+  } else {
+    // Wrong Click
+    cell.classList.add("wrong");
+    handleLoss();
+  }
+}
+
+function handleWin() {
+  canClick = false;
+  
+  // Calculate Score
+  let endTime = Date.now();
+  let timeTaken = endTime - startTime;
+  let levelBase = (currentLevelIdx + 1) * 100;
+  
+  // Bonus: If you are faster than 2 seconds, you get bonus points
+  // Max bonus decreases as time increases
+  let speedBonus = Math.max(0, 2000 - timeTaken); 
+  
+  // Round score to avoid decimals
+  let roundScore = Math.floor(levelBase + (speedBonus / 2));
+  score += roundScore;
+  updateScoreUI();
+
+  statusIndicator.innerText = "SUCCESS";
+  statusIndicator.style.color = "#2a9d8f";
+  msgArea.innerText = `Correct. +${roundScore} pts`;
+  
+  if (currentLevelIdx < levels.length - 1) {
+    nextBtn.style.display = "inline-block";
+  } else {
+    msgArea.innerText = `SYSTEM SECURE. FINAL SCORE: ${score}`;
+    retryBtn.innerText = "PLAY AGAIN";
+    retryBtn.style.display = "inline-block";
+  }
+}
+
+function handleLoss() {
+  canClick = false;
+  statusIndicator.innerText = "FAILURE";
+  statusIndicator.style.color = "#e63946";
+  msgArea.innerText = "Sequence mismatch.";
+  
+  // Reveal the missed cells
+  activePattern.forEach(idx => {
+    if (!grid.children[idx].classList.contains("correct")) {
+      grid.children[idx].classList.add("active");
+      grid.children[idx].style.opacity = "0.5";
+    }
+  });
+
+  retryBtn.innerText = "RETRY LEVEL";
+  retryBtn.style.display = "inline-block";
+}
+
+function updateScoreUI() {
+    scoreDisplay.innerText = score;
+}
+
+function nextLevel() {
+  currentLevelIdx++;
+  startLevel();
+}
+
+function restartGame() {
+  if(msgArea.innerText.includes("FINAL")) {
+    startGame(); // Full restart
+  } else {
+    startLevel(); // Retry current level
+  }
+}
+
+// Start system
+initGrid();
+startGame();
+
+</script>
+</body>
+</html>
