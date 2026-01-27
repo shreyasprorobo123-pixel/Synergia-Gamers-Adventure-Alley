@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EigenMemory: Cyber Sector</title>
+  <style>
+    :root {
+      --neon-cyan: #00f2ff;
+      --neon-pink: #ff0055;
+      --neon-green: #06d6a0;
+      --bg-dark: #020612;
+    }
+
+    * { box-sizing: border-box; }
+
+    body, html {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background-color: var(--bg-dark);
+      color: #e0e1dd;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* DATA STREAM BACKGROUND */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1; /* Behind UI but visible */
+      background: #010816;
+    }
+
+    /* INITIALIZE OVERLAY */
+    #init-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(1, 8, 22, 0.9);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .glitch-text {
+      font-size: 2.5rem;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 20px var(--neon-cyan);
+      font-weight: bold;
+      letter-spacing: 5px;
+      animation: pulse 2s infinite;
+    }
+
+    /* UI PANEL */
+    .glass-panel {
+      position: relative;
+      z-index: 10; /* Above background */
+      background: rgba(10, 25, 41, 0.92);
+      backdrop-filter: blur(20px);
+      padding: 40px;
+      border-radius: 45px;
+      border: 2px solid rgba(0, 242, 255, 0.5);
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(0, 242, 255, 0.1);
+      display: none; 
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 450px;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 25px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat-item { text-align: center; }
+    .stat-label { font-size: 0.7rem; color: var(--neon-cyan); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+
+    /* LIVES SYSTEM */
+    .lives-container { display: flex; gap: 8px; }
+    .life-icon {
+      font-size: 1.8rem;
+      color: var(--neon-pink);
+      text-shadow: 0 0 15px var(--neon-pink);
+      transition: all 0.5s ease;
+    }
+    .life-dim { opacity: 0.1; filter: grayscale(1); text-shadow: none; }
+
+    /* GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 65px); 
+      gap: 15px;
+      padding: 10px;
+    }
+
+    .cell {
+      width: 65px; height: 65px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .cell:hover { border-color: var(--neon-cyan); transform: scale(1.05); background: rgba(0, 242, 255, 0.1); }
+    .active { background: var(--neon-cyan) !important; box-shadow: 0 0 30px var(--neon-cyan); border: none; }
+    .correct { background: var(--neon-green) !important; box-shadow: 0 0 20px var(--neon-green); border: none; }
+    .wrong { background: var(--neon-pink) !important; box-shadow: 0 0 30px var(--neon-pink); animation: shake 0.4s; }
+
+    button {
+      padding: 18px 40px;
+      font-family: inherit;
+      background: var(--neon-cyan);
+      color: #010816;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 1rem;
+      text-transform: uppercase;
+      box-shadow: 0 0 25px rgba(0, 242, 255, 0.5);
+      display: none;
+      transition: 0.3s;
+    }
+
+    button:hover { transform: translateY(-3px); box-shadow: 0 10px 30px var(--neon-cyan); }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.98); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+  </style>
+</head>
+<body>
+
+<div id="init-overlay" onclick="bootSystem()">
+  <div class="glitch-text">INITIALIZE SYSTEM</div>
+  <div style="color: var(--neon-cyan); margin-top: 15px; opacity: 0.6;">[ CLICK TO ACCESS SECTORS ]</div>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="glass-panel" id="main-panel">
+  <div class="status-bar">
+    <div class="stat-item">
+      <div class="stat-label">Sector</div>
+      <div id="level-display" style="font-weight: bold; font-size: 1.2rem;">1 / 5</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Integrity</div>
+      <div class="lives-container" id="lives-container">
+        <span class="life-icon">♥</span>
+        <span class="life-icon">♥</span>
+        <span class="life-icon">♥</span>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Score</div>
+      <div id="score-val" style="color: #ffd60a; font-weight: bold; font-size: 1.2rem;">0</div>
+    </div>
+  </div>
+
+  <div id="msg-area" style="text-align: center; height: 30px; font-size: 0.9rem; color: var(--neon-cyan); letter-spacing: 1px;">ESTABLISHING UPLINK...</div>
+
+  <div class="grid" id="grid"></div>
+
+  <button id="next-btn" onclick="nextLevel()">LOAD NEXT SECTOR</button>
+  <button id="retry-btn" onclick="handleRetryClick()">REBOOT SYSTEM</button>
+</div>
+
+<script>
+// --- ROBUST BACKGROUND ENGINE ---
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let stars = [];
+
+function initBackground() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = [];
+    for (let i = 0; i < 150; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2,
+            speed: Math.random() * 3 + 1,
+            color: Math.random() > 0.5 ? '#00f2ff' : '#ff0055'
+        });
+    }
+}
+
+function animateBackground() {
+    ctx.fillStyle = 'rgba(1, 8, 22, 0.2)'; // Tail effect
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    stars.forEach(s => {
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Move downwards like data falling
+        s.y += s.speed;
+        if (s.y > canvas.height) {
+            s.y = -10;
+            s.x = Math.random() * canvas.width;
+        }
+    });
+    requestAnimationFrame(animateBackground);
+}
+
+window.addEventListener('resize', initBackground);
+initBackground();
+animateBackground();
+
+// --- AUDIO ENGINE ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type, dur) {
+  if(audioCtx.state === 'suspended') return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
+// --- GAME LOGIC ---
+let lives = 3;
+let currentLevelIdx = 0;
+let score = 0;
+let activePattern = [];
+let playerClicks = 0;
+let canClick = false;
+
+const levels = [
+  { count: 4, time: 2000 },
+  { count: 5, time: 1800 },
+  { count: 7, time: 1500 },
+  { count: 9, time: 1300 },
+  { count: 12, time: 1000 }
+];
+
+function initGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  for(let i=0; i<25; i++) {
+    let c = document.createElement("div");
+    c.className = "cell";
+    c.onclick = () => handleCellClick(i, c);
+    grid.appendChild(c);
+  }
+}
+
+function updateUI() {
+  document.getElementById("level-display").innerText = `${currentLevelIdx + 1} / 5`;
+  document.getElementById("score-val").innerText = score;
+  const icons = document.querySelectorAll(".life-icon");
+  icons.forEach((icon, idx) => {
+    icon.classList.toggle("life-dim", idx >= lives);
+  });
+}
+
+function bootSystem() {
+  audioCtx.resume();
+  document.getElementById("init-overlay").style.display = "none";
+  document.getElementById("main-panel").style.display = "flex";
+  initGrid();
+  updateUI();
+  startLevel();
+}
+
+function startLevel() {
+  document.getElementById("next-btn").style.display = "none";
+  document.getElementById("retry-btn").style.display = "none";
+  document.querySelectorAll(".cell").forEach(c => {
+    c.className = "cell";
+    c.style.opacity = "1";
+  });
+  
+  canClick = false;
+  playerClicks = 0;
+  activePattern = [];
+  
+  const config = levels[currentLevelIdx];
+  document.getElementById("msg-area").innerText = "CAPTURING DATA SLICE...";
+
+  while(activePattern.length < config.count) {
+    let r = Math.floor(Math.random() * 25);
+    if(!activePattern.includes(r)) activePattern.push(r);
+  }
+
+  activePattern.forEach((idx, i) => {
+    setTimeout(() => {
+      document.getElementById("grid").children[idx].classList.add("active");
+      playSound(300 + (i*60), 'sine', 0.2);
+    }, i * 250);
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll(".cell").forEach(c => c.classList.remove("active"));
+    document.getElementById("msg-area").innerText = "INPUT DETECTED: REPLICATE";
+    canClick = true;
+  }, config.time + (activePattern.length * 250));
+}
+
+function handleCellClick(idx, cell) {
+  if(!canClick || cell.classList.contains("correct")) return;
+  
+  if(activePattern.includes(idx)) {
+    cell.classList.add("correct");
+    playSound(900, 'sine', 0.1);
+    playerClicks++;
+    if(playerClicks === activePattern.length) {
+      canClick = false;
+      score += (currentLevelIdx + 1) * 250;
+      updateUI();
+      if(currentLevelIdx < 4) {
+        document.getElementById("msg-area").innerText = "SECTOR AUTHENTICATED";
+        document.getElementById("next-btn").style.display = "block";
+      } else {
+        document.getElementById("msg-area").innerText = "CORE ENCRYPTED. ACCESS GRANTED.";
+        document.getElementById("retry-btn").innerText = "RESTART NEW RUN";
+        document.getElementById("retry-btn").style.display = "block";
+      }
+    }
+  } else {
+    handleFailure(cell);
+  }
+}
+
+function handleFailure(cell) {
+  canClick = false;
+  cell.classList.add("wrong");
+  playSound(100, 'sawtooth', 0.5);
+  lives--;
+  updateUI();
+
+  activePattern.forEach(idx => {
+    if (!document.getElementById("grid").children[idx].classList.contains("correct")) {
+      document.getElementById("grid").children[idx].classList.add("active");
+      document.getElementById("grid").children[idx].style.opacity = "0.4";
+    }
+  });
+
+  if(lives > 0) {
+    document.getElementById("msg-area").innerText = "INTEGRITY FAULT! BOOTING TO SECTOR 1";
+    document.getElementById("retry-btn").innerText = "RESTART FROM SECTOR 1";
+  } else {
+    document.getElementById("msg-area").innerText = "TERMINAL LOCKOUT: LIVES EXHAUSTED";
+    document.getElementById("retry-btn").innerText = "TOTAL SYSTEM REBOOT";
+  }
+  document.getElementById("retry-btn").style.display = "block";
+}
+
+function handleRetryClick() {
+  if(lives <= 0) {
+    lives = 3;
+    score = 0;
+  }
+  currentLevelIdx = 0; 
+  updateUI();
+  startLevel();
+}
+
+function nextLevel() {
+  currentLevelIdx++;
+  updateUI();
+  startLevel();
+}
+</script>
+</body>
+</html>
