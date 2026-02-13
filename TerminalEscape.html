@@ -141,6 +141,10 @@ window.limit = limit;
 
 <script>
     let agentName = "UNKNOWN";
+    let bonusTriggered = false;
+let bonusTime = Math.floor(Math.random() * (240 - 60 + 1)) + 60;
+let freezeUsed = false;
+
 
     let audioCtx, currentStage = 0, timeLeft = 300, timerInterval, activeQuestions = [];
 
@@ -475,33 +479,34 @@ function typeWriter(text, elementId, speed = 30) {
 
     const ui = document.getElementById('game-ui');
 
-    // ✅ WIN CONDITION
     if (msg === "SYSTEM_BYPASSED") {
-        const timeUsed = 300 - timeLeft;
-        try {
-    await addDoc(collection(db, "leaderboard"), {
-        name: agentName,
-        time: timeUsed,
-        rank: rankTitle,
-        created: Date.now()
-    });
-} catch (e) {
-    console.log("Firebase save failed");
-}
+    const timeUsed = 300 - timeLeft;
 
-        let rankTitle = "SYSTEM BYPASSED";
-        if (timeUsed <= 198) {   // 3.3 minutes = 198 sec
-            rankTitle = "ELITE HACKER";
-        }
-
-        ui.innerHTML = `
-            <h1 style="color:var(--glow); margin:0;">${rankTitle}</h1>
-            <h2 style="color:white;">AGENT: ${agentName}</h2>
-            <p style="color:white;">Time Used: ${timeUsed}s</p>
-            <button class="btn-main" onclick="location.reload()">REBOOT</button>
-        `;
-        return; // 🔥 Important: stop here so meltdown doesn't run
+    let rankTitle = "SYSTEM BYPASSED";
+    if (timeUsed <= 198) {
+        rankTitle = "ELITE HACKER";
     }
+
+    // Save to Firebase
+    try {
+        await addDoc(collection(db, "leaderboard"), {
+            name: agentName,
+            time: timeUsed,
+            rank: rankTitle,
+            created: Date.now()
+        });
+    } catch (e) {
+        console.log("Firebase save failed");
+    }
+
+    ui.innerHTML = `
+        <h1 style="color:var(--glow); margin:0;">${rankTitle}</h1>
+        <h2 style="color:white;">AGENT: ${agentName}</h2>
+        <p style="color:white;">Time Used: ${timeUsed}s</p>
+        <button class="btn-main" onclick="location.reload()">REBOOT</button>
+    `;
+    return;
+}
 
     // ❌ LOSE CONDITION (Your Original Code)
     ui.innerHTML = `
@@ -532,6 +537,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
