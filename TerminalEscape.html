@@ -337,21 +337,52 @@
     }
 }
 
+let typingInterval;
+let cursorInterval;
+
 function typeWriter(text, elementId, speed = 30) {
     const element = document.getElementById(elementId);
     element.textContent = "";
     let i = 0;
 
-    function typing() {
-        if (i < text.length) {
-            element.textContent += text[i];
-            i++;
-            setTimeout(typing, speed);
-        }
-    }
+    clearInterval(cursorInterval);
+    clearInterval(typingInterval);
 
-    typing();
+    // Blinking cursor
+    let showCursor = true;
+    cursorInterval = setInterval(() => {
+        element.textContent = element.textContent.replace(/_$/, "");
+        if (showCursor) element.textContent += "_";
+        showCursor = !showCursor;
+    }, 500);
+
+    typingInterval = setInterval(() => {
+
+        // Stop when done
+        if (i >= text.length) {
+            clearInterval(typingInterval);
+            return;
+        }
+
+        // Remove cursor temporarily
+        element.textContent = element.textContent.replace(/_$/, "");
+
+        let char = text[i];
+
+        // 🔥 Glitch effect when under 30 seconds
+        if (timeLeft < 30 && Math.random() < 0.2) {
+            char = String.fromCharCode(33 + Math.random() * 94);
+            playGlitchSound();
+        } else {
+            playSound(600, 'square', 0.03); // typing sound
+        }
+
+        element.textContent += char + "_";
+        i++;
+
+    }, speed);
 }
+
 
 
     
@@ -372,5 +403,6 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
