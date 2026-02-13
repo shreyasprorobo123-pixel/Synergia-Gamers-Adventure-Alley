@@ -354,9 +354,26 @@ function stopHeartbeat() {
         });
     }
 
+function freezeTime() {
+    if (freezeUsed) return;
+
+    freezeUsed = true;
+    clearInterval(timerInterval);
+
+    setTimeout(() => {
+        startTimer();
+    }, 10000);
+
+    document.getElementById("freezeBtn").style.opacity = "0.4";
+}
+
+    
     function startHacking() {
         document.getElementById('screen-briefing').classList.add('hidden');
         document.getElementById('game-ui').classList.remove('hidden');
+        document.getElementById("game-ui").innerHTML += 
+    `<button id="freezeBtn" class="btn-main" onclick="freezeTime()">FREEZE (10s)</button>`;
+
         
         const map = document.getElementById('map-container');
         for(let i=0; i<10; i++) {
@@ -371,6 +388,12 @@ function stopHeartbeat() {
     function startTimer() {
         timerInterval = setInterval(() => {
             timeLeft--;
+            if (!bonusTriggered && timeLeft === bonusTime) {
+    bonusTriggered = true;
+    clearInterval(timerInterval);
+    showBonus();
+}
+
             const min = Math.floor(timeLeft/60), sec = timeLeft%60;
             const display = document.getElementById('timer-display'), box = document.getElementById('box');
             display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
@@ -381,6 +404,42 @@ function stopHeartbeat() {
         }, 1000);
     }
 
+function showBonus() {
+    const ui = document.getElementById("game-ui");
+
+    ui.innerHTML = `
+        <h2 style="color:var(--glow);">⚡ BONUS PROTOCOL ⚡</h2>
+        <p>Answer correctly for +30s. Wrong = -20s</p>
+        <button class="btn-main" onclick="handleBonus(true)">YES</button>
+        <button class="btn-main" onclick="handleBonus(false)">NO</button>
+    `;
+}
+
+function handleBonus(correct) {
+    if (correct) {
+        timeLeft += 30;
+    } else {
+        timeLeft -= 20;
+    }
+
+    document.getElementById("game-ui").innerHTML = `
+        <div id="map-container"></div>
+        <div id="timer-display"></div>
+        <p id="progress"></p>
+        <h3 id="room-name"></h3>
+        <p id="question"></p>
+        <input type="text" id="answer">
+        <button class="btn-main" onclick="checkAnswer()">SUBMIT BYPASS</button>
+        <button onclick="getHint()">[ REQUEST CLUE -20S ]</button>
+        <p id="status"></p>
+        <button id="freezeBtn" class="btn-main" onclick="freezeTime()">FREEZE (10s)</button>
+    `;
+
+    initStage();
+    startTimer();
+}
+
+    
     function initStage() {
         if (currentStage >= 10) return endGame("SYSTEM_BYPASSED");
         
@@ -537,6 +596,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
