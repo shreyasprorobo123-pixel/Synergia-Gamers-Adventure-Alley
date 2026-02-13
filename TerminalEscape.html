@@ -339,12 +339,12 @@
 
 function typeWriter(text, elementId, speed = 30) {
     const element = document.getElementById(elementId);
-    element.innerText = "";
+    element.textContent = "";
     let i = 0;
 
     function typing() {
         if (i < text.length) {
-            element.innerText += text.charAt(i);
+            element.textContent += text[i];
             i++;
             setTimeout(typing, speed);
         }
@@ -352,6 +352,7 @@ function typeWriter(text, elementId, speed = 30) {
 
     typing();
 }
+
 
     
     function getHint() {
@@ -371,4 +372,5 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
