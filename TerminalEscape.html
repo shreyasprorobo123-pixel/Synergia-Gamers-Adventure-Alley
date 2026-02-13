@@ -444,18 +444,35 @@ function typeWriter(text, elementId, speed = 30) {
         document.getElementById("status").style.color = "var(--hint)";
     }
 
-    function endGame(msg) {
+ function endGame(msg) {
     clearInterval(timerInterval);
     stopHeartbeat();
 
     const ui = document.getElementById('game-ui');
 
-    // Phase 1: ACCESS DENIED
+    // ✅ WIN CONDITION
+    if (msg === "SYSTEM_BYPASSED") {
+        const timeUsed = 300 - timeLeft;
+
+        let rankTitle = "SYSTEM BYPASSED";
+        if (timeUsed <= 198) {   // 3.3 minutes = 198 sec
+            rankTitle = "ELITE HACKER";
+        }
+
+        ui.innerHTML = `
+            <h1 style="color:var(--glow); margin:0;">${rankTitle}</h1>
+            <h2 style="color:white;">AGENT: ${agentName}</h2>
+            <p style="color:white;">Time Used: ${timeUsed}s</p>
+            <button class="btn-main" onclick="location.reload()">REBOOT</button>
+        `;
+        return; // 🔥 Important: stop here so meltdown doesn't run
+    }
+
+    // ❌ LOSE CONDITION (Your Original Code)
     ui.innerHTML = `
         <h1 style="color:white; font-size:40px; margin:0;">ACCESS DENIED</h1>
     `;
 
-    // Phase 2: MELTDOWN
     setTimeout(() => {
         ui.style.transition = "all 1.2s ease-in";
         ui.style.transform = "translateY(80px) skewY(6deg)";
@@ -474,11 +491,13 @@ function typeWriter(text, elementId, speed = 30) {
 }
 
 
+
     document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
 </script>
 </body>
 
 </html>
+
 
 
 
