@@ -388,7 +388,8 @@ function freezeTime() {
     function startTimer() {
         timerInterval = setInterval(() => {
             timeLeft--;
-            if (!bonusTriggered && timeLeft === bonusTime) {
+            if (!bonusTriggered && timeLeft <= bonusTime) {
+
     bonusTriggered = true;
     clearInterval(timerInterval);
     showBonus();
@@ -596,6 +597,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
