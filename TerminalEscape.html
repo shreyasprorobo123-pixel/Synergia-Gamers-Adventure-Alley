@@ -254,6 +254,35 @@
         playSound(400, 'sine', 0.2);
     }
 
+let heartbeatInterval;
+
+function startHeartbeat() {
+    if (heartbeatInterval || !audioCtx) return;
+
+    heartbeatInterval = setInterval(() => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+
+        o.type = "sine";
+        o.frequency.setValueAtTime(70, audioCtx.currentTime);
+
+        g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+        o.connect(g);
+        g.connect(audioCtx.destination);
+
+        o.start();
+        o.stop(audioCtx.currentTime + 0.3);
+    }, 1000);
+}
+
+function stopHeartbeat() {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+}
+
+
     function showIntro2() { 
         document.getElementById('screen-intro-1').classList.add('hidden'); 
         document.getElementById('screen-intro-2').classList.remove('hidden'); 
@@ -297,7 +326,8 @@
             const display = document.getElementById('timer-display'), box = document.getElementById('box');
             display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
             if(timeLeft < 30) { display.classList.add('critical'); box.classList.add('shake-light'); }
-            if(timeLeft <= 10) { box.classList.replace('shake-light', 'shake-heavy'); playGlitchSound(); }
+
+            if (timeLeft < 20) startHeartbeat();
             if(timeLeft <= 0) endGame("ACCESS_DENIED");
         }, 1000);
     }
@@ -394,16 +424,42 @@ function typeWriter(text, elementId, speed = 30) {
         document.getElementById("status").style.color = "var(--hint)";
     }
 
-    function endGame(msg) { 
-        clearInterval(timerInterval); 
-        document.getElementById('game-ui').innerHTML = `<h1 style="color:white; margin:0;">${msg}</h1><button class="btn-main" onclick="location.reload()" style="margin-top:20px;">REBOOT</button>`; 
-    }
+    function endGame(msg) {
+    clearInterval(timerInterval);
+    stopHeartbeat();
+
+    const ui = document.getElementById('game-ui');
+
+    // Phase 1: ACCESS DENIED
+    ui.innerHTML = `
+        <h1 style="color:white; font-size:40px; margin:0;">ACCESS DENIED</h1>
+    `;
+
+    // Phase 2: MELTDOWN
+    setTimeout(() => {
+        ui.style.transition = "all 1.2s ease-in";
+        ui.style.transform = "translateY(80px) skewY(6deg)";
+        ui.style.opacity = "0";
+
+        setTimeout(() => {
+            ui.innerHTML = `
+                <h1 style="color:var(--alert); font-size:42px;">YOU FAILED</h1>
+                <button class="btn-main" onclick="location.reload()" style="margin-top:20px;">REBOOT</button>
+            `;
+            ui.style.transform = "none";
+            ui.style.opacity = "1";
+        }, 1200);
+
+    }, 2000);
+}
+
 
     document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
 </script>
 </body>
 
 </html>
+
 
 
 
