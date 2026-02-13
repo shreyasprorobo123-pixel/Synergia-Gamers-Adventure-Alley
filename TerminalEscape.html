@@ -76,6 +76,13 @@
         <button class="btn-main" onclick="initAudio(); initGame()">[ BOOT SYSTEM ]</button>
     </div>
 
+<div id="screen-agent" class="hidden">
+    <h2 style="letter-spacing:4px;">ENTER AGENT CODENAME</h2>
+    <input type="text" id="agent-name" placeholder="AGENT_01" autocomplete="off">
+    <button class="btn-main" onclick="confirmAgent()">CONFIRM</button>
+</div>
+
+
     <div id="screen-intro-1" class="hidden">
         <p>A dark road. No moon. Only the sound of your own breath.</p>
         <button class="btn-main" onclick="showIntro2()">CONTINUE</button>
@@ -107,6 +114,8 @@
 </div>
 
 <script>
+    let agentName = "UNKNOWN";
+
     let audioCtx, currentStage = 0, timeLeft = 300, timerInterval, activeQuestions = [];
 
     // CUSTOM LOCATIONS
@@ -237,6 +246,7 @@
 
     ];
 
+
     function initAudio() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     function playSound(f, t, d) { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type=t; o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d); }
     function playGlitchSound() { if(!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; const now=audioCtx.currentTime; o.frequency.setValueAtTime(Math.random()*400+100, now); g.gain.setValueAtTime(0.03, now); g.gain.linearRampToValueAtTime(0, now+0.1); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(now+0.1); }
@@ -249,10 +259,20 @@
     function initGame() {
         activeQuestions = [...questionLibrary].sort(() => 0.5 - Math.random()).slice(0, 10);
         document.getElementById('screen-start').classList.add('hidden');
-        document.getElementById('screen-intro-1').classList.remove('hidden');
+        document.getElementById('screen-agent').classList.remove('hidden');
         document.getElementById('story-bg').style.backgroundImage = "url('https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=2000')";
         playSound(400, 'sine', 0.2);
     }
+
+function confirmAgent() {
+    const nameInput = document.getElementById("agent-name").value.trim();
+    if (nameInput !== "") {
+        agentName = nameInput;
+    }
+
+    document.getElementById('screen-agent').classList.add('hidden');
+    document.getElementById('screen-intro-1').classList.remove('hidden');
+}
 
 let heartbeatInterval;
 
@@ -459,6 +479,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
