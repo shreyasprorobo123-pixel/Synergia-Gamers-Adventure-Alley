@@ -312,23 +312,48 @@
 
         const data = activeQuestions[currentStage];
         document.getElementById("room-name").innerText = locationData[currentStage].name;
-        document.getElementById("question").innerText = data.q;
+        typeWriter(data.q, "question");
         document.getElementById("answer").value = "";
         document.getElementById("status").innerText = "";
         document.getElementById("answer").focus();
     }
 
     function checkAnswer() {
-        const val = document.getElementById("answer").value.trim().toLowerCase();
-        if (val === activeQuestions[currentStage].a) {
-            playSound(800, 'sine', 0.1); currentStage++; initStage();
-        } else {
-            playSound(100, 'sawtooth', 0.3); timeLeft -= 10;
-            document.getElementById("status").innerText = "CORRUPT_DATA: -10s";
-            document.getElementById("status").style.color = "red";
+    const input = document.getElementById("answer").value.trim();
+    const correct = activeQuestions[currentStage].a;
+
+    const normalizedInput = input.toLowerCase();
+    const normalizedCorrect = correct.toLowerCase();
+
+    if (normalizedInput === normalizedCorrect) {
+        playSound(800, 'sine', 0.1);
+        currentStage++;
+        initStage();
+    } else {
+        playSound(100, 'sawtooth', 0.3);
+        timeLeft -= 10;
+        document.getElementById("status").innerText = "CORRUPT_DATA: -10s";
+        document.getElementById("status").style.color = "red";
+    }
+}
+
+function typeWriter(text, elementId, speed = 30) {
+    const element = document.getElementById(elementId);
+    element.innerText = "";
+    let i = 0;
+
+    function typing() {
+        if (i < text.length) {
+            element.innerText += text.charAt(i);
+            i++;
+            setTimeout(typing, speed);
         }
     }
 
+    typing();
+}
+
+    
     function getHint() {
         if(timeLeft <= 20) return;
         timeLeft -= 20; playSound(300, 'triangle', 0.2);
@@ -346,3 +371,4 @@
 </body>
 
 </html>
+
