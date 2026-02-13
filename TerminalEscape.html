@@ -365,6 +365,7 @@ function freezeTime() {
             map.appendChild(node);
         }
         initStage(); startTimer();
+        document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
     }
 
     function startTimer() {
@@ -636,11 +637,12 @@ function typeWriter(text, elementId, speed = 30) {
 
 
 
-    document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
+    
 </script>
 </body>
 
 </html>
+
 
 
 
