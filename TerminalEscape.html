@@ -368,33 +368,46 @@ function freezeTime() {
     }
 
     function startTimer() {
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            let previousTime = timeLeft;
 
-timerInterval = setInterval(() => {
+    clearInterval(timerInterval); // prevent duplicates
 
-    previousTime = timeLeft;
-    timeLeft--;
+    timerInterval = setInterval(() => {
 
-    // Trigger only when crossing the bonusTime naturally
-    if (!bonusTriggered && previousTime > bonusTime && timeLeft <= bonusTime) {
-        bonusTriggered = true;
-        pauseForBonus();
-        return;
-    }
+        let previousTime = timeLeft;
+        timeLeft--;
 
+        // Trigger bonus correctly
+        if (!bonusTriggered && previousTime > bonusTime && timeLeft <= bonusTime) {
+            bonusTriggered = true;
+            pauseForBonus();
+            return;
+        }
 
+        const min = Math.floor(timeLeft / 60);
+        const sec = timeLeft % 60;
 
-            const min = Math.floor(timeLeft/60), sec = timeLeft%60;
-            const display = document.getElementById('timer-display'), box = document.getElementById('box');
-            display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
-            if(timeLeft < 30) { display.classList.add('critical'); box.classList.add('shake-light'); }
-            if(timeLeft <= 10) { box.classList.replace('shake-light', 'shake-heavy'); playGlitchSound(); }
-            if (timeLeft < 20) startHeartbeat();
-            if(timeLeft <= 0) endGame("ACCESS_DENIED");
-        }, 1000);
-    }
+        const display = document.getElementById('timer-display');
+        const box = document.getElementById('box');
+
+        display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
+
+        if (timeLeft < 30) {
+            display.classList.add('critical');
+            box.classList.add('shake-light');
+        }
+
+        if (timeLeft <= 10) {
+            box.classList.replace('shake-light', 'shake-heavy');
+            playGlitchSound();
+        }
+
+        if (timeLeft < 20) startHeartbeat();
+
+        if (timeLeft <= 0) endGame("ACCESS_DENIED");
+
+    }, 1000);
+}
+
 function pauseForBonus() {
 
     clearInterval(timerInterval);
@@ -628,6 +641,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
