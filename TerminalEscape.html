@@ -326,7 +326,7 @@ function stopHeartbeat() {
             const display = document.getElementById('timer-display'), box = document.getElementById('box');
             display.innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
             if(timeLeft < 30) { display.classList.add('critical'); box.classList.add('shake-light'); }
-
+            if(timeLeft <= 10) { box.classList.replace('shake-light', 'shake-heavy'); playGlitchSound(); }
             if (timeLeft < 20) startHeartbeat();
             if(timeLeft <= 0) endGame("ACCESS_DENIED");
         }, 1000);
@@ -459,6 +459,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
