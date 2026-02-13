@@ -113,32 +113,6 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDIkCzXESTeZ8jqSTnMbJlFLeqFqgQC07Q",
-  authDomain: "terminal-escape-8debd.firebaseapp.com",
-  projectId: "terminal-escape-8debd",
-  storageBucket: "terminal-escape-8debd.firebasestorage.app",
-  messagingSenderId: "912759287700",
-  appId: "1:912759287700:web:e681e9dd1234517ed3a981"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-window.collection = collection;
-window.addDoc = addDoc;
-window.getDocs = getDocs;
-window.query = query;
-window.orderBy = orderBy;
-window.limit = limit;
-</script>
-
 <script>
     let gamePaused = false;
 let savedGameHTML = "";
@@ -396,11 +370,20 @@ function freezeTime() {
     function startTimer() {
         timerInterval = setInterval(() => {
             timeLeft--;
-            if (!bonusTriggered && timeLeft <= bonusTime) {
-    bonusTriggered = true;
-    pauseForBonus();
-    return;
-}
+            let previousTime = timeLeft;
+
+timerInterval = setInterval(() => {
+
+    previousTime = timeLeft;
+    timeLeft--;
+
+    // Trigger only when crossing the bonusTime naturally
+    if (!bonusTriggered && previousTime > bonusTime && timeLeft <= bonusTime) {
+        bonusTriggered = true;
+        pauseForBonus();
+        return;
+    }
+
 
 
             const min = Math.floor(timeLeft/60), sec = timeLeft%60;
@@ -593,7 +576,7 @@ function typeWriter(text, elementId, speed = 30) {
         document.getElementById("status").style.color = "var(--hint)";
     }
 
- async function endGame(msg) {
+ function endGame(msg) {
     clearInterval(timerInterval);
     stopHeartbeat();
 
@@ -605,18 +588,6 @@ function typeWriter(text, elementId, speed = 30) {
     let rankTitle = "SYSTEM BYPASSED";
     if (timeUsed <= 198) {
         rankTitle = "ELITE HACKER";
-    }
-
-    // Save to Firebase
-    try {
-        await addDoc(collection(db, "leaderboard"), {
-            name: agentName,
-            time: timeUsed,
-            rank: rankTitle,
-            created: Date.now()
-        });
-    } catch (e) {
-        console.log("Firebase save failed");
     }
 
     ui.innerHTML = `
@@ -657,6 +628,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
