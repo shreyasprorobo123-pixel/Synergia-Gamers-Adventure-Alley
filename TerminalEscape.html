@@ -576,21 +576,6 @@ function checkBonus() {
 }
 
 
-    const data = activeQuestions[currentStage];
-
-    document.getElementById("room-name").innerText =
-        locationData[currentStage].name;
-
-    typeWriter(data.q, "question");
-
-    document.getElementById("answer").value =
-        userAnswers[currentStage] || "";
-
-    document.getElementById("status").innerText = "";
-    document.getElementById("answer").focus();
-}
-
-
 function checkAnswer() {
 
     const input = document.getElementById("answer").value.trim();
@@ -732,6 +717,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
