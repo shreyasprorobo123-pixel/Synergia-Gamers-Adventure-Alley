@@ -110,10 +110,14 @@
         <button class="btn-main" onclick="checkAnswer()">SUBMIT BYPASS</button>
         <button onclick="getHint()" style="background:none; border:none; color:var(--hint); cursor:pointer; font-size:11px;">[ REQUEST CLUE -20S ]</button>
         <p id="status" style="font-size: 12px; margin-top: 10px;"></p>
+        <button class="btn-main" onclick="previousStage()">PREVIOUS</button>
+        <button class="btn-main" onclick="nextStage()">SKIP</button>
+
     </div>
 </div>
 
 <script>
+    let userAnswers = new Array(10).fill("");
     let gamePaused = false;
 let savedGameHTML = "";
 let savedStage = 0;
@@ -283,6 +287,21 @@ function confirmAgent() {
 }
 
 let heartbeatInterval;
+
+function nextStage() {
+    if (currentStage < 9) {
+        currentStage++;
+        initStage();
+    }
+}
+
+function previousStage() {
+    if (currentStage > 0) {
+        currentStage--;
+        initStage();
+    }
+}
+
 
 function startHeartbeat() {
     if (heartbeatInterval || !audioCtx) return;
@@ -496,39 +515,70 @@ function checkBonus() {
 
     
     function initStage() {
-        if (currentStage >= 10) return endGame("SYSTEM_BYPASSED");
-        
-        for(let i=0; i<10; i++) {
-            const node = document.getElementById(`node-${i}`);
-            node.className = 'map-node' + (i < currentStage ? ' passed' : (i === currentStage ? ' active' : ''));
-        }
 
-        const data = activeQuestions[currentStage];
-        document.getElementById("room-name").innerText = locationData[currentStage].name;
-        typeWriter(data.q, "question");
-        document.getElementById("answer").value = "";
-        document.getElementById("status").innerText = "";
-        document.getElementById("answer").focus();
+    if (currentStage >= 10) {
+        // Check if all answered correctly
+        for (let i = 0; i < 10; i++) {
+            if (userAnswers[i].toLowerCase() !== activeQuestions[i].a.toLowerCase()) {
+                currentStage = i;
+                initStage();
+                return;
+            }
+        }
+        return endGame("SYSTEM_BYPASSED");
     }
 
+    for (let i = 0; i < 10; i++) {
+        const node = document.getElementById(`node-${i}`);
+        node.className = 'map-node' + 
+            (i < currentStage ? ' passed' : 
+            (i === currentStage ? ' active' : ''));
+    }
+
+    const data = activeQuestions[currentStage];
+
+    document.getElementById("room-name").innerText =
+        locationData[currentStage].name;
+
+    typeWriter(data.q, "question");
+
+    document.getElementById("answer").value =
+        userAnswers[currentStage] || "";
+
+    document.getElementById("status").innerText = "";
+    document.getElementById("answer").focus();
+}
+
+
     function checkAnswer() {
+
     const input = document.getElementById("answer").value.trim();
+    userAnswers[currentStage] = input;
+
     const correct = activeQuestions[currentStage].a;
 
-    const normalizedInput = input.toLowerCase();
-    const normalizedCorrect = correct.toLowerCase();
+    if (input.toLowerCase() === correct.toLowerCase()) {
 
-    if (normalizedInput === normalizedCorrect) {
         playSound(800, 'sine', 0.1);
-        currentStage++;
+
+        if (currentStage < 9) {
+            currentStage++;
+        } else {
+            currentStage = 10;
+        }
+
         initStage();
+
     } else {
         playSound(100, 'sawtooth', 0.3);
         timeLeft -= 10;
-        document.getElementById("status").innerText = "CORRUPT_DATA: -10s";
+
+        document.getElementById("status").innerText =
+            "WRONG — You can skip and return later (-10s)";
         document.getElementById("status").style.color = "red";
     }
 }
+
 
 let typingInterval;
 let cursorInterval;
@@ -639,6 +689,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
