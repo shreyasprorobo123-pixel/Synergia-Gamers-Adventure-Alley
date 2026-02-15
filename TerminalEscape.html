@@ -63,6 +63,17 @@
         .btn-main { background: var(--glow); color: black; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;}
         .btn-main:hover { background: #fff; }
         .hidden { display: none; }
+
+        .map-node.correct {
+    background: #00ff66;
+    box-shadow: 0 0 12px #00ff66;
+}
+
+.map-node.skipped {
+    background: #ffff00;
+    box-shadow: 0 0 12px #ffff00;
+}
+
     </style>
 </head>
 <body>
@@ -117,6 +128,9 @@
 </div>
 
 <script>
+    let questionStatus = new Array(10).fill("unanswered"); 
+// possible: "unanswered", "skipped", "correct"
+
     let userAnswers = new Array(10).fill("");
     let gamePaused = false;
 let savedGameHTML = "";
@@ -289,6 +303,11 @@ function confirmAgent() {
 let heartbeatInterval;
 
 function nextStage() {
+
+    if (questionStatus[currentStage] !== "correct") {
+        questionStatus[currentStage] = "skipped";
+    }
+
     if (currentStage < 9) {
         currentStage++;
         initStage();
@@ -374,15 +393,20 @@ function freezeTime() {
 
         
         const map = document.getElementById('map-container');
-        for(let i=0; i<10; i++) {
-            const node = document.createElement('div');
-            node.className = 'map-node';
-            node.id = `node-${i}`;
-            map.appendChild(node);
-        }
+        for (let i = 0; i < 10; i++) {
+    const node = document.createElement('div');
+    node.className = 'map-node';
+    node.id = `node-${i}`;
+    node.onclick = () => goToStage(i);
+    map.appendChild(node);
+}
         initStage(); startTimer();
         document.getElementById("answer").addEventListener("keyup", (e) => { if (e.key === "Enter") checkAnswer(); });
     }
+function goToStage(index) {
+    currentStage = index;
+    initStage();
+}
 
     function startTimer() {
 
@@ -514,26 +538,43 @@ function checkBonus() {
 
 
     
-    function initStage() {
-
-    if (currentStage >= 10) {
-        // Check if all answered correctly
-        for (let i = 0; i < 10; i++) {
-            if (userAnswers[i].toLowerCase() !== activeQuestions[i].a.toLowerCase()) {
-                currentStage = i;
-                initStage();
-                return;
-            }
-        }
-        return endGame("SYSTEM_BYPASSED");
-    }
+   function initStage() {
 
     for (let i = 0; i < 10; i++) {
+
         const node = document.getElementById(`node-${i}`);
-        node.className = 'map-node' + 
-            (i < currentStage ? ' passed' : 
-            (i === currentStage ? ' active' : ''));
+        node.className = "map-node";
+
+        if (questionStatus[i] === "correct")
+            node.classList.add("correct");
+
+        if (questionStatus[i] === "skipped")
+            node.classList.add("skipped");
+
+        if (i === currentStage)
+            node.classList.add("active");
     }
+
+    const data = activeQuestions[currentStage];
+
+    document.getElementById("room-name").innerText =
+        locationData[currentStage].name;
+
+    document.getElementById("answer").value =
+        userAnswers[currentStage] || "";
+
+    document.getElementById("status").innerText = "";
+
+    if (questionStatus[currentStage] === "correct") {
+        document.getElementById("status").innerText = "CODE DECRYPTED";
+        document.getElementById("status").style.color = "#00ff66";
+    } else {
+        typeWriter(data.q, "question");
+    }
+
+    document.getElementById("answer").focus();
+}
+
 
     const data = activeQuestions[currentStage];
 
@@ -550,7 +591,7 @@ function checkBonus() {
 }
 
 
-    function checkAnswer() {
+function checkAnswer() {
 
     const input = document.getElementById("answer").value.trim();
     userAnswers[currentStage] = input;
@@ -560,24 +601,26 @@ function checkBonus() {
     if (input.toLowerCase() === correct.toLowerCase()) {
 
         playSound(800, 'sine', 0.1);
+        questionStatus[currentStage] = "correct";
 
-        if (currentStage < 9) {
-            currentStage++;
-        } else {
-            currentStage = 10;
-        }
+        document.getElementById("status").innerText = "CODE DECRYPTED";
+        document.getElementById("status").style.color = "#00ff66";
 
         initStage();
 
     } else {
+
         playSound(100, 'sawtooth', 0.3);
         timeLeft -= 10;
 
+        questionStatus[currentStage] = "skipped";
+
         document.getElementById("status").innerText =
-            "WRONG — You can skip and return later (-10s)";
+            "ACCESS BLOCKED — You may return later (-10s)";
         document.getElementById("status").style.color = "red";
     }
 }
+
 
 
 let typingInterval;
@@ -689,6 +732,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
