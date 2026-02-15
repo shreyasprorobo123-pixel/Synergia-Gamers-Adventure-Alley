@@ -73,6 +73,19 @@
     background: #ffff00;
     box-shadow: 0 0 12px #ffff00;
 }
+        .nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.nav-btn {
+    width: 80px;          /* Half size */
+    padding: 6px 8px;     /* Smaller padding */
+    font-size: 12px;      /* Smaller text */
+}
+
 
     </style>
 </head>
@@ -121,8 +134,11 @@
         <button class="btn-main" onclick="checkAnswer()">SUBMIT BYPASS</button>
         <button onclick="getHint()" style="background:none; border:none; color:var(--hint); cursor:pointer; font-size:11px;">[ REQUEST CLUE -20S ]</button>
         <p id="status" style="font-size: 12px; margin-top: 10px;"></p>
-        <button class="btn-main" onclick="previousStage()">PREVIOUS</button>
-        <button class="btn-main" onclick="nextStage()">SKIP</button>
+        <div class="nav-buttons">
+    <button class="nav-btn" onclick="goPrevious()">Previous</button>
+    <button class="nav-btn" onclick="skipQuestion()">Skip</button>
+</div>
+
 
     </div>
 </div>
@@ -717,6 +733,7 @@ function typeWriter(text, elementId, speed = 30) {
 </body>
 
 </html>
+
 
 
 
